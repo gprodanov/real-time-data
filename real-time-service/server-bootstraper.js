@@ -13,7 +13,7 @@ module.exports = (config) => {
     });
 
     server.on('listening', () => {
-        console.log('socket server listening...');
+        console.log(`socket server listening on ${config.host}:${config.port}...`);
     });
 
     return server;

@@ -1,8 +1,12 @@
-const serverConfig = require('./server-config.json');
-const bootstrapServer = require('./bootstrap');
-const server = bootstrapServer(serverConfig);
+const configs = require('./configs.json');
+const bootstrapServer = require('./server-bootstraper');
+const server = bootstrapServer(configs.server);
+const bootstrapMessageQueue = require('./message-queue-bootstrapper');
+const msgQueue = bootstrapMessageQueue(configs.redis);
 
 const onStop = () => {
+    msgQueue.stop();
+
     server.close(() => {
         console.log('server shut down');
         process.exit(0);

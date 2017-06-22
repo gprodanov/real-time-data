@@ -4,8 +4,8 @@ const utils = require('./utils');
 const connectionsByTopic = {};
 const connectionsByid = {};
 
-function _buildTopicName ({ appId, contentType, operation }) {
-    return `${appId}.${contentType}.${operation}`;
+function _buildTopicName ({ appId, contentType, eventKind }) {
+    return `${appId}.${contentType}.${eventKind}`;
 }
 
 function connectionIsRegistered (conn) {
@@ -59,9 +59,12 @@ function getConnectionsByTopic (topicData) {
 
 function sendMessageForTopic (keyData, obj) {
     const conns = getConnectionsByTopic(keyData);
-    conns.forEach(conn => {
-        conn.send(utils.stringify(obj));
-    });
+    if (conns) {
+        conns.forEach(conn => {
+            const data = _.isString(obj) ? obj : utils.stringify(obj);
+            conn.send(data);
+        });
+    }
 }
 
 function onNewMessage (conn, data) {

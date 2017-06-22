@@ -1,8 +1,8 @@
 const constants = require('./constants');
 
 module.exports = {
-    validateClientData: ({ appId, contentType, operation, action }) => {
-        const isValid = !!appId && !!contentType && !!operation && !!action;
+    validateClientData: ({ appId, contentType, eventKind, action }) => {
+        const isValid = !!appId && !!contentType && !!eventKind && !!action;
         let errorMsg;
         if (!isValid) {
             errorMsg = 'Invalid message contents';

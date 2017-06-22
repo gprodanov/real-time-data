@@ -1,0 +1,16 @@
+{
+  "server": {
+    "host": "localhost",
+    "port": 8080
+  },
+  "kafka": {
+    "connectionString": "",
+    "clientId": ""
+  },
+  "redis": {
+    "host": "gngeorgievlnx.bedford.progress.com",
+    "port": 6379,
+    "ns": "messages",
+    "topic": "messages"
+  }
+}
