@@ -1,0 +1,5 @@
+.idea
+.jshintrc
+
+real-time-service/node_modules/**
+real-time-broker-service/node_modules/**
