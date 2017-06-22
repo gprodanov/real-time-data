@@ -1,36 +1,35 @@
 const _ = require('lodash');
-const RedisSMQ = require('rsmq');
+const events = require('events');
 const msgManager = require('./connection-manager');
 const utils = require('./utils');
+const nsq = require('nsq.js');
 
-module.exports = (config) => {
-    let intervalId;
-    const queue = new RedisSMQ(config);
-    queue.stop = () => {
-        clearInterval(intervalId);
-    };
+function Queue() {
+    this.emitter = new events.EventEmitter();
 
-    intervalId = setInterval(() => {
-        queue.receiveMessage({ qname: config.topic }, function (err, resp) {
-            if (!resp.id) {
-                return;
-            }
+    var reader = nsq.reader({
+        nsqd: ['192.168.130.50:4150'],
+        maxInFlight: 1,
+        maxAttempts: 5,
+        topic: 'messages',
+        channel: 'ingestion'
+    });
 
-            let data = utils.safeParseJson(resp.message);
-            console.log('Message data: ', data);
-            if (data) {
-                msgManager.sendMessageForTopic(data, resp.message);
-            }
+    reader.on('error', err => {
+        console.log(err.stack);
+    });
 
-            queue.deleteMessage({ qname: config.topic, id: resp.id }, function (err, resp) {
-                if (resp === 1) {
-                    console.log('Message deleted.');
-                } else {
-                    console.log('Message not found.');
-                }
-            });
-        });
-    }, 100);
+    reader.on('message', msg => {
+        this.emitter.emit('message', JSON.parse(msg.body.toString()));
+    });
+}
 
-    return queue;
+Queue.prototype = {
+    onData(callback) {
+        this.emitter.on('message', callback);
+    }
+};
+
+module.exports = config => {
+    return new Queue();
 };

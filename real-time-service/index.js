@@ -22,3 +22,7 @@ process.on('SIGTERM', () => {
     console.log('Received SIGTERM');
     onStop();
 });
+
+msgQueue.onData(d => {
+    console.log(d);
+});
