@@ -84,7 +84,7 @@ var writer = new nsq.Writer('192.168.130.50', 4150);
 writer.connect();
 
 function publishInQueue(data) {
-    writer.publish('messages1', data, err => {
+    writer.publish('messages', data, err => {
         if (err) {
             console.log(err);
         }
