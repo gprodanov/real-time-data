@@ -21,9 +21,9 @@ function _closeUnused(conn) {
 function handleConnection (server, conn) {
     conn._id = uuid();
     conn._wasUsed = false;
-    // setTimeout(() => {
-    //     _closeUnused(conn);
-    // }, constants.closeUnusedTimeout);
+    setTimeout(() => {
+        _closeUnused(conn);
+    }, constants.closeUnusedTimeout);
 
     // conn.on('pong', () => conn._isAlive = true);
 

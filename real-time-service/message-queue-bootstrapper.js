@@ -54,10 +54,11 @@ module.exports = config => {
         const parsedMsg = utils.safeParseJson(msg.body.toString());
         if (parsedMsg) {
             msgManager.sendMessageForTopic(parsedMsg, parsedMsg);
+            msg.finish();
         }
     });
 
-    // for testing purposes only
+    // TODO: for testing purposes only, remove
     // setInterval(() => {
     //     msgManager.sendMessageForTopic('test.test.test', { test: 123 });
     // }, 5000);
