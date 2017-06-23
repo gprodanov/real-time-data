@@ -2,10 +2,10 @@ const configs = require('./configs.json');
 const bootstrapServer = require('./server-bootstraper');
 const server = bootstrapServer(configs.server);
 const bootstrapMessageQueue = require('./message-queue-bootstrapper');
-const msgQueue = bootstrapMessageQueue(configs.redis);
+const msgQueue = bootstrapMessageQueue(configs.nsq);
 
 const onStop = () => {
-    msgQueue.stop();
+    msgQueue.close();
 
     server.close(() => {
         console.log('server shut down');
@@ -21,8 +21,4 @@ process.on('SIGINT', () => {
 process.on('SIGTERM', () => {
     console.log('Received SIGTERM');
     onStop();
-});
-
-msgQueue.onData(d => {
-    console.log(d);
 });

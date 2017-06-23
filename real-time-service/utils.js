@@ -3,6 +3,7 @@ function safeParseJson(str) {
     try {
         data = JSON.parse(str);
     } catch (ex) {
+        console.log('json parse error');
     }
     return data;
 }

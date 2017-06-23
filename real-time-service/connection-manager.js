@@ -8,6 +8,10 @@ function _buildTopicName ({ appId, contentType, eventKind }) {
     return `${appId}.${contentType}.${eventKind}`;
 }
 
+function _getTopic (descriptor) {
+    return _.isObject(descriptor) ? _buildTopicName(descriptor) : descriptor;
+}
+
 function connectionIsRegistered (conn) {
     return !!connectionsByid[conn._id];
 }
@@ -42,7 +46,7 @@ function subscribeForTopic (conn, data) {
 }
 
 function unsubscribeFromTopic (conn, topicData) {
-    const topic = _.isObject(topicData) ? _buildTopicName(topicData) : topicData;
+    const topic = _getTopic(topicData);
     if (!connectionsByTopic[topic]) {
         return console.log('no subscribers for this topic');
     }
@@ -53,17 +57,19 @@ function unsubscribeFromTopic (conn, topicData) {
 }
 
 function getConnectionsByTopic (topicData) {
-    const topic = _.isObject(topicData) ? _buildTopicName(topicData) : topicData;
+    const topic = _getTopic(topicData);
     return connectionsByTopic[topic];
 }
 
-function sendMessageForTopic (keyData, obj) {
-    const conns = getConnectionsByTopic(keyData);
-    if (conns) {
+function sendMessageForTopic (topicData, obj) {
+    const conns = getConnectionsByTopic(topicData);
+    if (conns && conns.length) {
         conns.forEach(conn => {
             const data = _.isString(obj) ? obj : utils.stringify(obj);
             conn.send(data);
         });
+    } else {
+        console.log('no conns for topic: ' + _getTopic(topicData));
     }
 }
 
