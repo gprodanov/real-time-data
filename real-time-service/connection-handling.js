@@ -21,11 +21,11 @@ function _closeUnused(conn) {
 function handleConnection (server, conn) {
     conn._id = uuid();
     conn._wasUsed = false;
-    setTimeout(() => {
-        _closeUnused(conn);
-    }, constants.closeUnusedTimeout);
+    // setTimeout(() => {
+    //     _closeUnused(conn);
+    // }, constants.closeUnusedTimeout);
 
-    conn.on('pong', () => conn._isAlive = true);
+    // conn.on('pong', () => conn._isAlive = true);
 
     conn.on('message', msg => {
         conn._wasUsed = true;
@@ -40,6 +40,7 @@ function handleConnection (server, conn) {
 
         const err = validation.validateClientData(data);
         if (err) {
+            console.log('validation error: ' + JSON.stringify(data));
             return _respond(conn, err);
         }
         connManager.onNewMessage(conn, data);
@@ -51,16 +52,16 @@ function handleConnection (server, conn) {
 
     connManager.registerConnection(conn);
 
-    setInterval(() => {
-        server.clients.forEach((conn) => {
-            if (conn._isAlive === false) {
-                return conn.terminate();
-            }
-
-            conn._isAlive = false;
-            conn.ping('', false, true);
-        });
-    }, constants.pingInterval);
+    // setInterval(() => {
+    //     server.clients.forEach((conn) => {
+    //         if (conn._isAlive === false) {
+    //             return conn.terminate();
+    //         }
+    //
+    //         conn._isAlive = false;
+    //         conn.ping('', false, true);
+    //     });
+    // }, constants.pingInterval);
 }
 
 module.exports = {

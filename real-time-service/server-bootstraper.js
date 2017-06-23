@@ -1,20 +1,26 @@
+const http = require('http');
 const handler = require('./connection-handling');
 
 module.exports = (config) => {
-    const WebSocket = require('ws');
-    const server = new WebSocket.Server(config);
-
-    server.on('connection', (conn) => { // 2nd arg "req"
-        handler.handleConnection(server, conn);
+    const httpServer = http.createServer((req, res) => {
+        res.writeHead(426, config.headers);
     });
 
-    server.on('error', err => {
+    const WebSocket = require('ws');
+    const socketServer = new WebSocket.Server({ server: httpServer });
+
+    socketServer.on('connection', (conn) => { // 2nd arg "req"
+        handler.handleConnection(socketServer, conn);
+    });
+
+    socketServer.on('error', err => {
         console.error('server error: ' + err.message);
     });
 
-    server.on('listening', () => {
+    socketServer.on('listening', () => {
         console.log(`socket server listening on ${config.host}:${config.port}...`);
     });
 
-    return server;
+    httpServer.listen(config.port);
+    return socketServer;
 };

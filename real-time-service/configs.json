@@ -1,7 +1,12 @@
 {
   "server": {
     "host": "localhost",
-    "port": 8080
+    "port": 8080,
+    "headers": {
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Headers": "*",
+      "Access-Control-Allow-Methods": "PUT, GET, POST, DELETE, OPTIONS"
+    }
   },
   "kafka": {
     "connectionString": "",
