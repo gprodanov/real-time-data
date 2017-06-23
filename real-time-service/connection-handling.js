@@ -5,7 +5,7 @@ const constants = require('./constants');
 const utils = require('./utils');
 const validation = utils.validation;
 
-function _respond (conn, obj) {
+function _respond(conn, obj) {
     if (obj.error) {
         return console.log('cancelled respond with error: ' + obj.message);
     }
@@ -18,12 +18,12 @@ function _closeUnused(conn) {
     }
 }
 
-function handleConnection (server, conn) {
+function handleConnection(server, conn) {
     conn._id = uuid();
     conn._wasUsed = false;
-    setTimeout(() => {
-        _closeUnused(conn);
-    }, constants.closeUnusedTimeout);
+    // setTimeout(() => {
+    //     _closeUnused(conn);
+    // }, constants.closeUnusedTimeout);
 
     // conn.on('pong', () => conn._isAlive = true);
 
@@ -38,11 +38,11 @@ function handleConnection (server, conn) {
             });
         }
 
-        const err = validation.validateClientData(data);
-        if (err) {
-            console.log('validation error: ' + JSON.stringify(data));
-            return _respond(conn, err);
-        }
+        // const err = validation.validateClientData(data);
+        // if (err) {
+        //     console.log('validation error: ' + JSON.stringify(data));
+        //     return _respond(conn, err);
+        // }
         connManager.onNewMessage(conn, data);
     });
 

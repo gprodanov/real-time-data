@@ -4,32 +4,6 @@ const msgManager = require('./connection-manager');
 const utils = require('./utils');
 const nsq = require('nsqjs');
 
-function Queue(config) {
-    this.emitter = new events.EventEmitter();
-    config.nsqd = [`${config.host}:${config.port}`];
-
-    var reader = new nsq.Reader('messages', 'ingestion', {
-        nsqdTCPAddresses: ['192.168.130.50:4151']
-    });
-
-    reader.connect();
-
-    reader.on('error', err => {
-        console.log(err.stack);
-    });
-
-    reader.on('message', msg => {
-        const parsedMsg = utils.safeParseJson(msg.body.toString());
-        this.emitter.emit('message', parsedMsg);
-    });
-}
-
-Queue.prototype = {
-    onData(callback) {
-        this.emitter.on('message', callback);
-    }
-};
-
 module.exports = config => {
     const nsqdAddr = `${config.host}:${config.port}`;
 
@@ -52,10 +26,17 @@ module.exports = config => {
     reader.on(nsq.Reader.MESSAGE, msg => {
         console.log('got msg from queue: ' + msg.body.toString());
         const parsedMsg = utils.safeParseJson(msg.body.toString());
-        if (parsedMsg) {
-            msgManager.sendMessageForTopic(parsedMsg, parsedMsg);
-            msg.finish();
+        if (!parsedMsg) {
+            return console.log(`Error parsing message, ${msg}`);
         }
+
+        if (parsedMsg.action === 'broadcast') {
+            msgManager.sendBroadcast(parsedMsg);
+        } else {
+            msgManager.sendMessageForTopic(parsedMsg, parsedMsg);
+        }
+
+        msg.finish();
     });
 
     // TODO: for testing purposes only, remove
