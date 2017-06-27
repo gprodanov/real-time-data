@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html class="no-js">
+
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
@@ -9,25 +10,31 @@
     <meta name="apple-mobile-web-app-capable" content="yes" />
 
     <link rel="stylesheet" href="/example/assets/css/main.css">
+    <style>
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: initial;
+        }
+    </style>
 
     <script>
-        window.requestAnimationFrame=function(){
-            return window.requestAnimationFrame||window.webkitRequestAnimationFrame||
-                    window.mozRequestAnimationFrame||window.msRequestAnimationFrame||
-                    window.oRequestAnimationFrame||function(f){window.setTimeout(f,1e3/60)}}();
+        window.requestAnimationFrame = function () {
+            return window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
+                window.mozRequestAnimationFrame || window.msRequestAnimationFrame ||
+                window.oRequestAnimationFrame || function (f) { window.setTimeout(f, 1e3 / 60) }        
+}();
     </script>
+    <script src="/bundle/sdk.js"></script>
 </head>
 
 <body>
     <div class="intro">
-        <h2>Responsive Snake</h2>
         <p>(R) - Reset | (Space) - Pause | (B) - Bot | (0) - On/Off | (-/+) Adjust Speed </p>
-        <p>* <a href="https://github.com/iamchrismiller/responsive-snake">Check out the source code</a> *</p>
     </div>
 
     <div class="container absolute">
-
-        <canvas id="snake-canvas" autofocus="autofocus" data-full-screen="true"></canvas>
 
         <div id="scoreboard">
             <div id="score">
@@ -47,23 +54,110 @@
         </div>
     </div>
 
-<!-- Vendor Component Libraries -->
-<script src="https://code.jquery.com/jquery-3.2.1.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.1.6/zepto.js"></script>
+    <!-- Vendor Component Libraries -->
+    <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.1.6/zepto.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.js"></script>
+    <script src="/node_modules/circular-json/build/circular-json.max.js"></script>
+    
 
-<!-- Browserified Build -->
-<script src="http://localhost:4321/bundle/output.js"></script>
+    <!-- Browserified Build -->
+    <script src="/bundle/output.js"></script>
 
-<script>
-    //Start Snake Game
-    $(document).ready(function() {
-        ResponsiveSnake.start({
-            snakePixels    : 14,
-            snakeSize      : 4,
-            bot            : true,
-            explosion      : true
+    <script>
+        var el = new Everlive({
+            appId: 'btqzpbr4k8a0pe35',
+            url: '//192.168.130.50:3000/v1/'
         });
-    });
-</script>
+
+        function getParam (name, url) {
+            if (!url) url = window.location.href;
+            name = name.replace(/[\[\]]/g, "\\$&");
+            var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+                results = regex.exec(url);
+            if (!results) return null;
+            if (!results[2]) return '';
+            return decodeURIComponent(results[2].replace(/\+/g, " "));
+        }
+
+        function userIdTocanvasId (userId) {
+            return 'snake-canvas' + userId;
+        }
+
+        function addCanvas (userId) {
+            var canvasId = userIdTocanvasId(userId);
+            var newCanvas = $('<canvas id="' + canvasId + '" width="0" height="0" autofocus="autofocus" data-full-screen="true"></canvas>');
+            $('.container.absolute').append(newCanvas);
+            return $('#' + canvasId);
+        }
+
+        function removeCanvas (userId) {
+            var canvasId = userIdTocanvasId(userId);
+            $('#' + canvasId).remove();
+        }
+
+        $(window).on('beforeunload', function() {
+            el.broadcast('user-left', { userId: window.currentUserId });
+        });
+
+        //Start Snake Game
+        $(document).ready(function () {
+            var gamesByUserId = {};
+            var isPlaying = false;
+
+            window.currentUserId = parseInt(getParam('currUser'), 10);
+
+            el.subscribeBroadcast('gamestate', function(msg) {                
+                if (!gamesByUserId[msg.data.userId]) {
+                    var newGame = addGame(msg.data.userId);
+                    newGame.start();
+                }
+
+                var data = msg.data;
+                var game = gamesByUserId[data.userId];
+
+                game.inst.create(data.gamestate);
+                game.inst.createFood(data.gamestate);
+
+                game.inst.animationLoop();
+            });
+        
+            el.subscribeBroadcast('user-joined', function(msg) {
+                var game = addGame(msg.data.userId);
+                game.start();
+            });
+        
+            el.subscribeBroadcast('user-left', function(msg) {
+                removeCanvas(msg.data.userId);
+            });
+
+            if (currentUserId >= 0) {
+                el.broadcast('user-joined', { userId: currentUserId });
+            }
+
+            function addGame (userId) {
+                var newCanvas = addCanvas(userId);
+                var canvasId = newCanvas.attr('id');
+                var game = assignGameToCanvas(userId, canvasId);
+                gamesByUserId[userId] = game;
+                return game;
+            }
+
+            function assignGameToCanvas (userId, canvasId, gamestate) {
+                var settings = {
+                    canvasId: canvasId,
+                    userId: userId,
+                    gamestate: gamestate,
+                    snakePixels: 14,
+                    snakeSize: 4,
+                    bot: true,
+                    explosion: true
+                };
+                return ResponsiveSnake.getNew(settings);
+            }
+        });
+
+    </script>
 </body>
+
 </html>

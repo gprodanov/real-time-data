@@ -1,4 +1,5 @@
 /*global module, require, $ */
+var el;
 
 var cookie = require('./util/cookie');
 
@@ -8,6 +9,7 @@ var cookie = require('./util/cookie');
  * @constructor
  */
 var GameContainer = function (options) {
+  var self = this;
   this.started = false;
   this.disabled = false;
   this.score = 0;
@@ -19,7 +21,7 @@ var GameContainer = function (options) {
   }
 
   this.ui = {
-    canvas : $('#snake-canvas'),
+    canvas : $('#' + options.canvasId),
     scoreboard : $('#score span', '#scoreboard'),
     userScore : $('#hi-score span','#scoreboard'),
     botScore : $('#bot-hi-score span', '#scoreboard')
@@ -40,7 +42,11 @@ this.$canvas = this.inst.$canvas;
  */
 GameContainer.prototype.start = function () {
   this.started = true;
-  this.inst.start();
+  this.inst.start(this.settings);
+};
+
+GameContainer.prototype.play = function () {
+  this.inst.play(true);
 };
 
 /**
@@ -190,6 +196,9 @@ GameContainer.prototype.onResize = function () {
  * @param event
  */
 GameContainer.prototype.onKeydown = function (event) {
+  if (this.settings.userId !== window.currentUserId) {
+    return;
+  }
   switch (event.keyCode) {
     case 38 :
       this.inst.queueDirection(this.inst.DIRECTIONS.UP);

@@ -69,6 +69,8 @@
 
 /*global $, require*/
 
+var el;
+
 //Game Container
 var GameContainer = __webpack_require__(1);
 
@@ -80,12 +82,29 @@ var SnakeGame = __webpack_require__(3);
  * @type {{game: GameContainer, start: start, bindEvents: bindEvents}}
  */
 var ResponsiveSnake = {
+  getNew: function(opts) {
+    opts = $.extend(opts, {
+      inst : new SnakeGame(opts)
+    });
+
+    el = Everlive.$;
+
+    // el.subscribeBroadcast('gamestate', function(msg) {
+    //   var inst = CircularJSON.parse(msg.data.circStr);
+    //   opts.inst = inst;
+    //   ResponsiveSnake.game = new GameContainer(opts);
+    // });
+
+    this.game = new GameContainer(opts);
+    return this.game;
+  },
+
   /**
    * Initialize a new Game
    */
-  game : new GameContainer({
-    inst : new SnakeGame()
-  }),
+  // game : new GameContainer({
+  //   inst : new SnakeGame()
+  // }),
 
   /**
    * Start Game and Bind Window Events
@@ -135,6 +154,7 @@ if (typeof module !== 'undefined' && !window) {
 /***/ (function(module, exports, __webpack_require__) {
 
 /*global module, require, $ */
+var el;
 
 var cookie = __webpack_require__(2);
 
@@ -144,6 +164,7 @@ var cookie = __webpack_require__(2);
  * @constructor
  */
 var GameContainer = function (options) {
+  var self = this;
   this.started = false;
   this.disabled = false;
   this.score = 0;
@@ -155,7 +176,7 @@ var GameContainer = function (options) {
   }
 
   this.ui = {
-    canvas : $('#snake-canvas'),
+    canvas : $('#' + options.canvasId),
     scoreboard : $('#score span', '#scoreboard'),
     userScore : $('#hi-score span','#scoreboard'),
     botScore : $('#bot-hi-score span', '#scoreboard')
@@ -176,7 +197,11 @@ this.$canvas = this.inst.$canvas;
  */
 GameContainer.prototype.start = function () {
   this.started = true;
-  this.inst.start();
+  this.inst.start(this.settings);
+};
+
+GameContainer.prototype.play = function () {
+  this.inst.play(true);
 };
 
 /**
@@ -326,6 +351,9 @@ GameContainer.prototype.onResize = function () {
  * @param event
  */
 GameContainer.prototype.onKeydown = function (event) {
+  if (this.settings.userId !== window.currentUserId) {
+    return;
+  }
   switch (event.keyCode) {
     case 38 :
       this.inst.queueDirection(this.inst.DIRECTIONS.UP);
@@ -423,6 +451,9 @@ module.exports = {
 /***/ (function(module, exports, __webpack_require__) {
 
 /*global requestAnimationFrame, module, require, $ */
+var el;
+
+var colorMap = ['#FF0000', '#0000FF', '#00FF00'];
 
 var Piece = __webpack_require__(4),
  Food = __webpack_require__(5),
@@ -435,6 +466,8 @@ var Piece = __webpack_require__(4),
  * @constructor
  */
 var Snake = function(options) {
+  var self = this;
+  this.options = options || {};
 
   this.score = 0;
   this.started = false;
@@ -443,9 +476,13 @@ var Snake = function(options) {
   this.particles = [];
   this.particleCount = 150;
 
-  this.$canvas = $("canvas");
+  this.throttledDraw = _.throttle(Snake.prototype.throttledDraw, 1000 / 12);
+
+  this.$canvas = $('#' + (options.canvasId || ''));
+  this.$canvas.css({ 'background-color': 'transparent' });
   this.canvas = this.$canvas[0];
   this.context = this.canvas.getContext('2d');
+  el = Everlive.$;
 
   if (this.$canvas.data('full-screen')) {
     this.canvas.width = window.innerWidth;
@@ -497,16 +534,6 @@ Snake.prototype.setOptions = function(options) {
 };
 
 /**
- * Start Snake Game
- */
-Snake.prototype.start = function() {
-  this.started = true;
-  this.create();
-  this.createFood();
-  this.play();
-};
-
-/**
  * Reset Game Session Variables
  */
 Snake.prototype.reset = function() {
@@ -539,8 +566,10 @@ Snake.prototype.restart = function () {
 /**
  * Resume/Play Game
  */
-Snake.prototype.play = function() {
-  this.started = true;
+Snake.prototype.play = function(skipSate) {
+  if (!skipSate) {
+    this.started = true;
+  }
   if (typeof this.animationLoop === 'function') {
     this.animationLoop();
   }
@@ -586,20 +615,40 @@ Snake.prototype.onResize = function(height, width) {
 /**
  * Create Snake
  */
-Snake.prototype.create = function() {
-  for (var x = 0; x < this.settings.snakeSize; x++) {
-    this.pieces.push(new Piece({
-      x : 0,
-      y : 20,
-      width : this.settings.snakePixels
-    }));
+Snake.prototype.create = function(gamestate) {
+  var self = this;
+  if (gamestate) {
+    self.pieces.splice(0, self.pieces.length);
+    gamestate.pieces.forEach(function(pieceData) {
+      pieceData.color = colorMap[self.options.userId];
+      self.pieces.push(new Piece(pieceData));
+    });
+  } else {
+    var offset = Math.round((Math.random() * 20));
+    for (var x = 0; x < this.settings.snakeSize; x++) {
+      this.pieces.push(new Piece({
+        x : 0,
+        y : 20 + offset,
+        width : this.settings.snakePixels
+      }));
+    }
   }
 };
 
 /**
  * Create a piece of food
  */
-Snake.prototype.createFood = function() {
+Snake.prototype.createFood = function(gamestate) {
+  if (gamestate) {
+    var self = this;
+    self.food.splice(0, self.food.length);
+    gamestate.food.forEach(function(fd) {
+      fd.color = colorMap[self.options.userId];
+      self.food.push(new Food(fd));
+    });
+    return;
+  }
+  
   this.food.push(new Food({
     x : Math.round(Math.random() * (this.canvas.width - this.settings.snakePixels) / this.settings.snakePixels),
     y : Math.round(Math.random() * (this.canvas.height - this.settings.snakePixels) / this.settings.snakePixels),
@@ -835,22 +884,61 @@ Snake.prototype.drawLoop = function() {
   });
 };
 
+Snake.prototype.throttledDraw = function() {
+  if (this.options.userId !== window.currentUserId) {
+    return;
+  }
+  
+  var self = this;
+  var foodClone = self.food.map(function(f) {
+    return { x: f.x, y: f.y, width: f.width, border: f.border, color: f.color };
+  });
+  var dataToSend = {
+    userId: self.options.userId,
+    gamestate: {
+      pieces: self.pieces.map(function(p) {
+        return {
+          x: p.x,
+          y: p.y,
+          width: p.width
+        };
+      }),
+      food: foodClone
+    }
+  };
+  el.broadcast('gamestate', dataToSend);
+};
+
 /**
  * Snake Animation Loop
  */
 Snake.prototype.animationLoop = function() {
   if (this.started) {
     var self = this;
-    if (this.animationTimeout) {
-      clearTimeout(this.animationTimeout);
-    }
+    // if (this.animationTimeout) {
+    //   clearTimeout(this.animationTimeout);
+    // }
     //Ensure FPS
-    this.animationTimeout = setTimeout(function() {
+    // this.animationTimeout = setTimeout(function() {
       self.drawLoop.call(self);
       self.particleLoop.call(self);
-      window.requestAnimationFrame(self.animationLoop.bind(self));
-    }, 1000 / this.fps);
+      // window.requestAnimationFrame(self.animationLoop.bind(self));
+      self.throttledDraw.call(self);
+
+    // }, 1000 / this.fps);
   }
+};
+
+/**
+ * Start Snake Game
+ */
+Snake.prototype.start = function() {
+  var self = this;
+  
+  this.started = true;
+  this.create();
+  this.createFood();
+  this.play();
 };
 
 /**

@@ -1,5 +1,7 @@
 /*global $, require*/
 
+var el;
+
 //Game Container
 var GameContainer = require('./GameContainer');
 
@@ -11,12 +13,29 @@ var SnakeGame = require('./SnakeGame');
  * @type {{game: GameContainer, start: start, bindEvents: bindEvents}}
  */
 var ResponsiveSnake = {
+  getNew: function(opts) {
+    opts = $.extend(opts, {
+      inst : new SnakeGame(opts)
+    });
+
+    el = Everlive.$;
+
+    // el.subscribeBroadcast('gamestate', function(msg) {
+    //   var inst = CircularJSON.parse(msg.data.circStr);
+    //   opts.inst = inst;
+    //   ResponsiveSnake.game = new GameContainer(opts);
+    // });
+
+    this.game = new GameContainer(opts);
+    return this.game;
+  },
+
   /**
    * Initialize a new Game
    */
-  game : new GameContainer({
-    inst : new SnakeGame()
-  }),
+  // game : new GameContainer({
+  //   inst : new SnakeGame()
+  // }),
 
   /**
    * Start Game and Bind Window Events
