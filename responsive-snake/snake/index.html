@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>BaaS-y Snake-a Lobby</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="/favicon.ico">
+
+    <link rel="stylesheet" href="/snake/bootstraptheme.css">
+
+    <style>
+        body {
+            padding: 50px;
+        }
+    </style>
+
+    <script src="/snake/sdk.js"></script>
+</head>
+
+<body>
+    <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+    <script>
+        var appModule = angular.module('snake-lobby', []);
+        appModule.controller('ctrl', function ctrl($scope) {
+            $scope.colorOptions = ['red', 'blue', 'green', 'purple', 'yellow', 'black', 'white'];
+            $scope.colorOptions[-1] = 'Watch Demo';
+            $scope.selectedColor = -1;
+            $scope.roomName = '';
+            $scope.scoreLimit = 5;
+
+            $scope.selectColor = function (color) {
+                $scope.selectedColor = $scope.colorOptions.indexOf(color);
+                console.log($scope.selectedColor);
+            };
+
+            $scope.play = function () {
+                window.location.href = '/snake/play.html?currUser=' + $scope.selectedColor + '&limit=' + $scope.scoreLimit + '&roomName=' + $scope.roomName;
+            };
+        });
+    </script>
+
+    <div ng-app="snake-lobby" ng-controller="ctrl" ng-cloak>
+        <form class="form-horizontal">
+            <div class="form-group">
+                <label class="control-label col-sm-2">Player Color:</label>
+                <div class="col-sm-10">
+                    <div class="dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">{{colorOptions[selectedColor] }}
+                        <span class="caret"></span></button>
+                        <ul class="dropdown-menu">
+                            <li ng-repeat="option in colorOptions"><a href="#" ng-click="selectColor(option)">{{option}}</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="room-name">Room Name:</label>
+                <div class="col-sm-10">
+                    <input type="text" class="form-control" id="room-name" placeholder="Public room" ng-model="roomName">
+                </div>
+            </div>
+            <div class="form-group">
+                <label class="control-label col-sm-2" for="score-limit">Score Limit:</label>
+                <div class="col-sm-10">
+                    <input type="number" class="form-control" id="score-limit" ng-model="scoreLimit" min="1" max="20">
+                </div>
+            </div>
+            <div class="form-group">
+                <div class="col-sm-offset-2 col-sm-10">
+                    <button type="submit" class="btn btn-primary" ng-click="play()">Join!</button>
+                </div>
+            </div>
+        </form>
+    </div>
+    </script>
+</body>
+
+</html>

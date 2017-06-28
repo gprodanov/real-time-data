@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>BaaS-y Snake-a loss :(</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="/favicon.ico">
+
+    <link rel="stylesheet" href="/snake/bootstraptheme.css">
+    <style>
+        body {
+            background-color: #F1F1F1;
+        }
+
+        h1 {
+            font-size: 80px;
+            font-weight: bold;
+            color: #F4550F;
+        }
+
+        p {
+            font-size: 30px;
+        }
+
+        .text {
+            text-align: center;
+            color: #F4550F;
+        }
+
+        .black {
+            color: black;
+        }
+
+        #play-again-btn {
+            padding: 20px 30px;
+            display: inline-block;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            box-shadow: 1px 1px 15px #000;
+            cursor: pointer;
+            margin-top: 50px;
+            margin-bottom: 50px;
+        }
+    </style>
+</head>
+
+<body>
+    <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.6.1/angular.js"></script>
+
+    <script>
+        var appModule = angular.module('snake', []);
+        appModule.controller('ctrl', function ctrl($scope) {
+            $scope.playAgain = function() {
+                window.location.href = '/snake';
+            };
+        });
+    </script>
+
+    <div ng-app="snake" ng-controller="ctrl">
+        <h1 class="text">You lost :(</h1>
+        <p class="text black">Oh well, can't win 'em all... Want another go?</p>
+        <button id="play-again-btn" ng-click="playAgain()" class="btn btn-primary">You bet!</button>
+    </div>
+</body>
+
+</html>

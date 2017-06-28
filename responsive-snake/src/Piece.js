@@ -5,7 +5,7 @@
  */
 function Piece(options) {
   this.options = options || {};
-  this.width = this.options.width ? this.options.width : 10;
+  this.width = this.options.width ? this.options.width : 14;
   this.x = this.options.x ? this.options.x : 0;
   this.y = this.options.y ? this.options.y : 0;
   this.color = this.options.color || '#FFF';

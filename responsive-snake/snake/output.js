@@ -453,7 +453,7 @@ module.exports = {
 /*global requestAnimationFrame, module, require, $ */
 var el;
 
-var colorMap = ['#FF0000', '#0000FF', '#00FF00'];
+var colorMap = ['#E74C3C', '#3498DB', '#27AE60', '#7D3C98', '#F1C40F', '#273746'];
 
 var Piece = __webpack_require__(4),
  Food = __webpack_require__(5),
@@ -505,6 +505,11 @@ var Snake = function(options) {
     timeout        : 1000,
     explosion      : true
   }, options);
+
+  this.topic = 'gamestate';
+  if (this.settings.roomName) {
+    this.topic += '.' + this.settings.roomName;
+  }
 
   this.DIRECTIONS = {
     UP   : 0,
@@ -885,13 +890,13 @@ Snake.prototype.drawLoop = function() {
 };
 
 Snake.prototype.throttledDraw = function() {
-  if (this.options.userId !== window.currentUserId) {
+  if (this.options.userId !== window.currentUserId && window.currentUserId !== -1) {
     return;
   }
   
   var self = this;
   var foodClone = self.food.map(function(f) {
-    return { x: f.x, y: f.y, width: f.width, border: f.border, color: f.color };
+    return { x: f.x, y: f.y };
   });
   var dataToSend = {
     userId: self.options.userId,
@@ -899,14 +904,13 @@ Snake.prototype.throttledDraw = function() {
       pieces: self.pieces.map(function(p) {
         return {
           x: p.x,
-          y: p.y,
-          width: p.width
+          y: p.y
         };
       }),
       food: foodClone
     }
   };
-  el.broadcast('gamestate', dataToSend);
+  el.broadcast(this.topic, dataToSend);
 };
 
 /**
@@ -980,7 +984,7 @@ module.exports = Snake;
  */
 function Piece(options) {
   this.options = options || {};
-  this.width = this.options.width ? this.options.width : 10;
+  this.width = this.options.width ? this.options.width : 14;
   this.x = this.options.x ? this.options.x : 0;
   this.y = this.options.y ? this.options.y : 0;
   this.color = this.options.color || '#FFF';
@@ -1026,7 +1030,7 @@ module.exports = Piece;
  */
 function Food(options) {
   this.options = options || {};
-  this.width = this.options.width ? this.options.width : 10;
+  this.width = this.options.width ? this.options.width : 14;
   this.x = this.options.x ? this.options.x : 0;
   this.y = this.options.y ? this.options.y : 0;
 

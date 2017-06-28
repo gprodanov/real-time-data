@@ -4,10 +4,11 @@
 <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>Simple Snake</title>
+    <title>BaaS-y Snake-a</title>
     <meta name="description" content="">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <link rel="icon" href="/favicon.ico">
 
     <link rel="stylesheet" href="/example/assets/css/main.css">
     <style>
@@ -15,7 +16,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            display: initial;
+            /*color: #273746;
+            color: #F1C40F;
+            color: #7D3C98;*/
         }
     </style>
 
@@ -23,15 +26,16 @@
         window.requestAnimationFrame = function () {
             return window.requestAnimationFrame || window.webkitRequestAnimationFrame ||
                 window.mozRequestAnimationFrame || window.msRequestAnimationFrame ||
-                window.oRequestAnimationFrame || function (f) { window.setTimeout(f, 1e3 / 60) }        
-}();
+                window.oRequestAnimationFrame || function (f) { window.setTimeout(f, 1e3 / 60) }
+        }();
     </script>
-    <script src="/bundle/sdk.js"></script>
+    <script src="/snake/sdk.js"></script>
 </head>
 
 <body>
     <div class="intro">
-        <p>(R) - Reset | (Space) - Pause | (B) - Bot | (0) - On/Off | (-/+) Adjust Speed </p>
+        <h2>BaaS-y Snake-a</h2>
+        <p>(R) - Reset | (Space) - Pause | (B) - Bot </p>
     </div>
 
     <div class="container absolute">
@@ -58,11 +62,9 @@
     <script src="https://code.jquery.com/jquery-3.2.1.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/zepto/1.1.6/zepto.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lodash.js/4.17.4/lodash.js"></script>
-    <script src="/node_modules/circular-json/build/circular-json.max.js"></script>
-    
 
     <!-- Browserified Build -->
-    <script src="/bundle/output.js"></script>
+    <script src="/snake/output.js"></script>
 
     <script>
         var el = new Everlive({
@@ -70,7 +72,7 @@
             url: '//192.168.130.50:3000/v1/'
         });
 
-        function getParam (name, url) {
+        function getParam(name, url) {
             if (!url) url = window.location.href;
             name = name.replace(/[\[\]]/g, "\\$&");
             var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
@@ -80,34 +82,55 @@
             return decodeURIComponent(results[2].replace(/\+/g, " "));
         }
 
-        function userIdTocanvasId (userId) {
+        function userIdTocanvasId(userId) {
             return 'snake-canvas' + userId;
         }
 
-        function addCanvas (userId) {
+        function addCanvas(userId) {
             var canvasId = userIdTocanvasId(userId);
             var newCanvas = $('<canvas id="' + canvasId + '" width="0" height="0" autofocus="autofocus" data-full-screen="true"></canvas>');
             $('.container.absolute').append(newCanvas);
             return $('#' + canvasId);
         }
 
-        function removeCanvas (userId) {
+        function removeCanvas(userId) {
             var canvasId = userIdTocanvasId(userId);
             $('#' + canvasId).remove();
         }
 
-        $(window).on('beforeunload', function() {
+        $(window).on('beforeunload', function () {
             el.broadcast('user-left', { userId: window.currentUserId });
         });
 
         //Start Snake Game
         $(document).ready(function () {
+            var playerCount = 0;
             var gamesByUserId = {};
             var isPlaying = false;
+            var scoreLimit = parseInt(getParam('limit'), 10) || Infinity;
+            var roomName = getParam('roomName') || '';
+            var gameStateTopic = 'gamestate';
+            if (roomName) {
+                gameStateTopic += '.' + roomName;
+            }
 
             window.currentUserId = parseInt(getParam('currUser'), 10);
 
-            el.subscribeBroadcast('gamestate', function(msg) {                
+            if (currentUserId === -1) {
+                setInterval(function () {
+                    if (playerCount < 7) {
+                        el.broadcast('user-joined', { userId: playerCount++ });
+                    }
+                }, 700);
+            }
+
+            el.subscribeBroadcast(gameStateTopic, function (msg) {
+                if (msg.data.gamestate.pieces.length >= scoreLimit + 4) {
+                    var won = currentUserId === msg.data.userId;
+                    window.location.href = '/snake/' + (won ? 'win' : 'loss') + '.html?player=' + currentUserId + '&winner=' + msg.data.userId;
+                    return;
+                }
+
                 if (!gamesByUserId[msg.data.userId]) {
                     var newGame = addGame(msg.data.userId);
                     newGame.start();
@@ -121,13 +144,13 @@
 
                 game.inst.animationLoop();
             });
-        
-            el.subscribeBroadcast('user-joined', function(msg) {
+
+            el.subscribeBroadcast('user-joined', function (msg) {
                 var game = addGame(msg.data.userId);
                 game.start();
             });
-        
-            el.subscribeBroadcast('user-left', function(msg) {
+
+            el.subscribeBroadcast('user-left', function (msg) {
                 removeCanvas(msg.data.userId);
             });
 
@@ -135,7 +158,7 @@
                 el.broadcast('user-joined', { userId: currentUserId });
             }
 
-            function addGame (userId) {
+            function addGame(userId) {
                 var newCanvas = addCanvas(userId);
                 var canvasId = newCanvas.attr('id');
                 var game = assignGameToCanvas(userId, canvasId);
@@ -143,20 +166,20 @@
                 return game;
             }
 
-            function assignGameToCanvas (userId, canvasId, gamestate) {
+            function assignGameToCanvas(userId, canvasId, gamestate) {
                 var settings = {
+                    roomName: roomName,
                     canvasId: canvasId,
                     userId: userId,
                     gamestate: gamestate,
                     snakePixels: 14,
                     snakeSize: 4,
-                    bot: true,
+                    bot: getParam('bot') !== 'false',
                     explosion: true
                 };
                 return ResponsiveSnake.getNew(settings);
             }
         });
-
     </script>
 </body>
 
